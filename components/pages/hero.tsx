@@ -1,10 +1,12 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { MessageDiv } from "@/components/message-div"
+import { defaultDebateMessages } from "@/lib/debate-messages"
 
 export default function HeroHeader() {
   const router = useRouter()
@@ -14,6 +16,16 @@ export default function HeroHeader() {
   const initialTopic = searchParams.get("topic") ?? ""
   const [topic, setTopic] = useState(initialTopic)
   const [submitted, setSubmitted] = useState(false)
+
+  // Reset to initial state (no submitted topic) whenever the topic
+  // query parameter is cleared, e.g. by clicking the navbar logo.
+  useEffect(() => {
+    const queryTopic = (searchParams.get("topic") ?? "").trim()
+    if (!queryTopic) {
+      setSubmitted(false)
+      setTopic("")
+    }
+  }, [searchParams])
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -26,6 +38,8 @@ export default function HeroHeader() {
     router.push(`${pathname}?${params.toString()}`)
     setSubmitted(true)
   }
+
+  const hasTopic = topic.trim().length > 0
 
   return (
     <section className="container flex min-h-[60vh] flex-col items-center justify-center pb-12 pt-10 text-center lg:pt-20">
@@ -59,6 +73,21 @@ export default function HeroHeader() {
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {submitted && hasTopic && (
+        <div className="flex w-full flex-1 flex-col items-center gap-6 lg:gap-8">
+
+          <div className="flex w-full max-w-3xl flex-col items-stretch gap-2 text-left">
+            {defaultDebateMessages.map((item, index) => (
+              <MessageDiv
+                key={`${item.speaker}-${index}`}
+                speaker={item.speaker}
+                message={item.message}
+              />
+            ))}
+          </div>
         </div>
       )}
     </section>

@@ -1,6 +1,6 @@
 // components/message_div.tsx
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MessageDivProps {
   speaker: string;
@@ -23,9 +23,14 @@ function TypingIndicator() {
 }
 
 export function MessageDiv({ speaker, message, loadingStatus = false }: MessageDivProps) {
+  const isFor = speaker === "For";
+  const avatarSrc = isFor ? "/for.png" : "/against.png";
+  const avatarAlt = isFor ? "For side avatar" : "Against side avatar";
+
   return (
     <div className="flex items-start gap-3 w-full px-4 py-2">
       <Avatar className="mt-6 shrink-0">
+        <AvatarImage src={avatarSrc} alt={avatarAlt} />
         <AvatarFallback className="bg-gray-200 text-gray-500">
           {speaker.charAt(0).toUpperCase()}
         </AvatarFallback>
