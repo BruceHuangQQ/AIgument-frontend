@@ -1,0 +1,47 @@
+// components/message_div.tsx
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+interface MessageDivProps {
+  speaker: string;
+  message: string;
+  loadingStatus?: boolean;
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1.5 px-6 py-5">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-2.5 h-2.5 bg-muted-foreground rounded-full opacity-70 animate-bounce"
+          style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function MessageDiv({ speaker, message, loadingStatus = false }: MessageDivProps) {
+  return (
+    <div className="flex items-start gap-3 w-full px-4 py-2">
+      <Avatar className="mt-6 shrink-0">
+        <AvatarFallback className="bg-gray-200 text-gray-500">
+          {speaker.charAt(0).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex flex-col gap-1 flex-1">
+        <span className="text-sm font-medium text-gray-700 text-left px-6">{speaker}</span>
+
+        <Card className="rounded-3xl bg-accent border-none shadow-none w-full max-w-[50vw]">
+          {loadingStatus ? (
+            <TypingIndicator />
+          ) : (
+            <p className="px-6 py-5 text-sm leading-relaxed text-left text-card-foreground">{message}</p>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
