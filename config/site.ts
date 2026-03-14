@@ -9,7 +9,7 @@ const baseUrl = "https://nextlanding.rdev.pro"
 
 export const siteConfig: SiteConfig = {
   name: "AIgument",
-  author: "redpangilinan",
+  author: "Nullpoint - Unihack",
   description:
     "Easy to setup, customizable, quick, and responsive landing page starter built with Next.js and shadcn/ui.",
   keywords: [
@@ -24,11 +24,7 @@ export const siteConfig: SiteConfig = {
   ],
   url: {
     base: baseUrl,
-    author: "https://redpangilinan.live",
+    author: "https://github.com/BruceHuangQQ/AIgument-frontend",
   },
   ogImage: `${baseUrl}/og.jpg`,
-}
-
-export const contactConfig: ContactConfig = {
-  email: "janreynald.pangilinan@gmail.com",
 }

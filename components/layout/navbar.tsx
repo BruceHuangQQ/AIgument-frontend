@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { ModeToggle } from "@/components/mode-toggle"
 import { siteConfig } from "@/config/site"
-import { navLinks } from "@/lib/links"
 import { settings } from "@/config/settings"
 
 export default function Navbar() {
   const [navbar, setNavbar] = useState(false)
+  const searchParams = useSearchParams()
+  const topic = (searchParams.get("topic") ?? "").trim()
 
   const handleClick = async () => {
     setNavbar(false)
@@ -75,23 +77,15 @@ export default function Navbar() {
         <div>
           <div
             className={`absolute left-0 right-0 z-10 m-auto justify-self-center rounded-md border bg-background p-4 md:static md:mt-0 md:block md:border-none md:p-0 ${
-              navbar ? "block" : "hidden"
+              navbar ? "block" : "hidden md:block"
             }`}
             style={{ width: "100%", maxWidth: "20rem" }}
           >
-            <ul className="flex flex-col items-center space-y-4 text-primary opacity-60 md:flex-row md:space-x-6 md:space-y-0">
-              {navLinks.map((link) => (
-                <li key={link.route}>
-                  <Link
-                    className="hover:underline"
-                    href={link.path}
-                    onClick={handleClick}
-                  >
-                    {link.route}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {topic && (
+              <div className="flex items-center justify-center rounded-md bg-muted px-4 py-2 text-sm text-muted-foreground md:text-base">
+                {topic}
+              </div>
+            )}
           </div>
         </div>
         {settings.themeToggleEnabled && (
