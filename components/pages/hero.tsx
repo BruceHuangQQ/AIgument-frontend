@@ -1,12 +1,12 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MessageDiv } from "@/components/message-div"
-import { defaultDebateMessages } from "@/lib/debate-messages"
+import { fetchNextMessage, type Message } from "@/lib/debate"
 
 export default function HeroHeader() {
   const router = useRouter()
@@ -16,27 +16,62 @@ export default function HeroHeader() {
   const initialTopic = searchParams.get("topic") ?? ""
   const [topic, setTopic] = useState(initialTopic)
   const [submitted, setSubmitted] = useState(false)
+  const [conversation, setConversation] = useState<Message[]>([])
+  const [loading, setLoading] = useState(false)
+  const [debateEnded, setDebateEnded] = useState(false)
+  const [currentSpeaker, setCurrentSpeaker] = useState<"for" | "against">("for")
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-  // Reset to initial state (no submitted topic) whenever the topic
-  // query parameter is cleared, e.g. by clicking the navbar logo.
   useEffect(() => {
     const queryTopic = (searchParams.get("topic") ?? "").trim()
     if (!queryTopic) {
       setSubmitted(false)
       setTopic("")
+      setConversation([])
+      setDebateEnded(false)
+      setCurrentSpeaker("for")
     }
   }, [searchParams])
 
-  const handleSubmit = (event: FormEvent) => {
+  // Auto-scroll to bottom as messages come in
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [conversation, loading])
+
+  const sendNext = async (t: string, speaker: "for" | "against", history: Message[]) => {
+    setLoading(true)
+    try {
+      const message = await fetchNextMessage(t, speaker, history)
+      const updated: Message[] = [...history, { speaker, message }]
+      setConversation(updated)
+
+      if (message.trim().toUpperCase().includes("END DEBATE")) {
+        setDebateEnded(true)
+      } else {
+        const nextSpeaker = speaker === "for" ? "against" : "for"
+        setCurrentSpeaker(nextSpeaker)
+        // Automatically fire the next turn
+        await sendNext(t, nextSpeaker, updated)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     const trimmed = topic.trim()
     if (!trimmed) return
 
     const params = new URLSearchParams(searchParams.toString())
     params.set("topic", trimmed)
-
     router.push(`${pathname}?${params.toString()}`)
+
     setSubmitted(true)
+    setConversation([])
+    setDebateEnded(false)
+    setCurrentSpeaker("for")
+    await sendNext(trimmed, "for", [])
   }
 
   const hasTopic = topic.trim().length > 0
@@ -79,13 +114,22 @@ export default function HeroHeader() {
       {submitted && hasTopic && (
         <div className="flex w-full flex-1 items-stretch justify-center">
           <div className="flex h-full max-h-[60vh] w-full max-w-2xl flex-col items-stretch gap-2 overflow-y-auto text-left">
-            {defaultDebateMessages.map((item, index) => (
+            {conversation.map((item, index) => (
               <MessageDiv
                 key={`${item.speaker}-${index}`}
                 speaker={item.speaker}
                 message={item.message}
               />
             ))}
+            {loading && (
+              <MessageDiv speaker={currentSpeaker} message="" loadingStatus={true} />
+            )}
+            {debateEnded && (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                — Debate ended —
+              </p>
+            )}
+            <div ref={bottomRef} />
           </div>
         </div>
       )}
