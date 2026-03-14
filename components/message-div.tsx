@@ -37,7 +37,7 @@ export function MessageDiv({ speaker, message, loadingStatus = false }: MessageD
       </Avatar>
 
       <div className="flex flex-col gap-1 flex-1">
-        <span className="text-sm font-medium text-gray-700 text-left px-6">{speaker}</span>
+        <span className="text-sm font-medium text-primary text-left px-2">{speaker}</span>
 
         <Card className="rounded-3xl bg-accent border-none shadow-none w-full max-w-[50vw]">
           {loadingStatus ? (

@@ -42,9 +42,9 @@ export default function HeroHeader() {
   const hasTopic = topic.trim().length > 0
 
   return (
-    <section className="container flex min-h-[60vh] flex-col items-center justify-center pb-12 pt-10 text-center lg:pt-20">
+    <section className="container flex min-h-[60vh] flex-col items-center justify-center pt-10 text-center">
       {!submitted && (
-        <div className="flex w-full flex-1 flex-col items-center gap-6 lg:gap-8">
+        <div className="flex w-full flex-1 flex-col items-center gap-6 lg:gap-8 pb-12 pt-10">
           <div className="space-y-4">
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
               Watch AI Debate Anything.
@@ -77,9 +77,8 @@ export default function HeroHeader() {
       )}
 
       {submitted && hasTopic && (
-        <div className="flex w-full flex-1 flex-col items-center gap-6 lg:gap-8">
-
-          <div className="flex w-full max-w-3xl flex-col items-stretch gap-2 text-left">
+        <div className="flex w-full flex-1 items-stretch justify-center">
+          <div className="flex h-full max-h-[60vh] w-full max-w-2xl flex-col items-stretch gap-2 overflow-y-auto text-left">
             {defaultDebateMessages.map((item, index) => (
               <MessageDiv
                 key={`${item.speaker}-${index}`}
