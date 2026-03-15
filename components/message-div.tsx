@@ -8,6 +8,7 @@ interface MessageDivProps {
   speaker: string;
   message: string;
   loadingStatus?: boolean;
+  onType?: () => void;
 }
 
 function TypingIndicator() {
@@ -24,7 +25,7 @@ function TypingIndicator() {
   );
 }
 
-export function MessageDiv({ speaker, message, loadingStatus = false }: MessageDivProps) {
+export function MessageDiv({ speaker, message, loadingStatus, onType}: MessageDivProps) {
   const isFor = speaker === "For";
   const avatarSrc = isFor ? "/for.png" : "/against.png";
   const avatarAlt = isFor ? "For side avatar" : "Against side avatar";
@@ -45,7 +46,7 @@ export function MessageDiv({ speaker, message, loadingStatus = false }: MessageD
           {loadingStatus ? (
             <TypingIndicator />
           ) : (
-            <TypewriterText loop={false} speed={10} className="break-words overflow-hidden px-6 py-5 text-left text-sm leading-relaxed text-card-foreground">
+            <TypewriterText loop={false} speed={10} className="break-words overflow-hidden px-6 py-5 text-left text-sm leading-relaxed text-card-foreground" onType={onType}>
                 {message}
             </TypewriterText>
           )}

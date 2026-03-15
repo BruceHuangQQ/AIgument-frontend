@@ -24,6 +24,7 @@ export interface TypewriterTextProps {
   speed?: number;
   loop?: boolean;
   className?: string;
+  onType?: () => void;
 }
 
 const LOOP_RESTART_DELAY_MS = 1000;
@@ -33,6 +34,7 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
   speed = 50,
   loop = false,
   className = "",
+  onType,
 }) => {
   const [displayed, setDisplayed] = useState("");
   const index = useRef(0);
@@ -43,6 +45,7 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
     if (shouldReduceMotion) {
       // Show full text immediately when reduced motion is enabled
       setDisplayed(children);
+      onType?.()
       return;
     }
 
@@ -50,6 +53,7 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
     index.current = 0;
     function type() {
       setDisplayed(children.slice(0, index.current + 1));
+      onType?.()
       if (index.current < children.length - 1) {
         index.current++;
         timeout.current = setTimeout(type, speed);

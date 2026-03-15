@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useRef, useState } from "react"
+import { FormEvent, useEffect, useRef, useState, useCallback } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
@@ -55,9 +55,13 @@ export default function HeroHeader() {
   }, [searchParams])
 
   // Auto-scroll to bottom as messages come in
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [conversation, loading])
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [conversation, loading, scrollToBottom])
 
   const sendNext = async (t: string, speaker: "for" | "against", history: Message[]) => {
     const sessionId = debateSessionRef.current
@@ -155,6 +159,7 @@ export default function HeroHeader() {
                 key={`${item.speaker}-${index}`}
                 speaker={speakerLabel(item.speaker)}
                 message={item.message}
+                onType={scrollToBottom}
               />
             ))}
             {loading && (
