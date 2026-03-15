@@ -79,7 +79,7 @@ export default function Navbar() {
             className={`absolute left-0 right-0 z-10 m-auto justify-self-center rounded-md border bg-background p-4 md:static md:mt-0 md:block md:border-none md:p-0 ${
               navbar ? "block" : "hidden md:block"
             }`}
-            style={{ width: "100%", maxWidth: "20rem" }}
+            style={{ width: "100%", maxWidth: "36rem" }}
           >
             {topic && (
               <div className="flex items-center justify-center rounded-md bg-muted px-4 py-2 text-sm text-muted-foreground md:text-base">
