@@ -36,14 +36,16 @@ export function MessageDiv({ speaker, message, loadingStatus = false }: MessageD
         </AvatarFallback>
       </Avatar>
 
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-sm font-medium text-primary text-left px-2">{speaker}</span>
 
-        <Card className="rounded-3xl bg-accent border-none shadow-none w-full max-w-[50vw]">
+        <Card className="min-w-0 max-w-[50vw] overflow-hidden rounded-3xl border-none bg-accent shadow-none w-full">
           {loadingStatus ? (
             <TypingIndicator />
           ) : (
-            <p className="px-6 py-5 text-sm leading-relaxed text-left text-card-foreground">{message}</p>
+            <p className="break-words overflow-hidden px-6 py-5 text-left text-sm leading-relaxed text-card-foreground">
+              {message}
+            </p>
           )}
         </Card>
       </div>
