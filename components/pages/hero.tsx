@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button"
 import { MessageDiv } from "@/components/message-div"
 import { fetchNextMessage, type Message } from "@/lib/debate"
 
+const ROUNDS = 3
+const TURNS = ROUNDS * 2 // 6: for, against, for, against, for, against
+
+function speakerLabel(speaker: "for" | "against"): string {
+  return speaker === "for" ? "For" : "Against"
+}
+
 export default function HeroHeader() {
   const router = useRouter()
   const pathname = usePathname()
@@ -39,18 +46,17 @@ export default function HeroHeader() {
   }, [conversation, loading])
 
   const sendNext = async (t: string, speaker: "for" | "against", history: Message[]) => {
+    setCurrentSpeaker(speaker)
     setLoading(true)
     try {
       const message = await fetchNextMessage(t, speaker, history)
       const updated: Message[] = [...history, { speaker, message }]
       setConversation(updated)
 
-      if (message.trim().toUpperCase().includes("END DEBATE")) {
+      if (updated.length >= TURNS) {
         setDebateEnded(true)
       } else {
         const nextSpeaker = speaker === "for" ? "against" : "for"
-        setCurrentSpeaker(nextSpeaker)
-        // Automatically fire the next turn
         await sendNext(t, nextSpeaker, updated)
       }
     } finally {
@@ -117,12 +123,16 @@ export default function HeroHeader() {
             {conversation.map((item, index) => (
               <MessageDiv
                 key={`${item.speaker}-${index}`}
-                speaker={item.speaker}
+                speaker={speakerLabel(item.speaker)}
                 message={item.message}
               />
             ))}
             {loading && (
-              <MessageDiv speaker={currentSpeaker} message="" loadingStatus={true} />
+              <MessageDiv
+                speaker={speakerLabel(currentSpeaker)}
+                message=""
+                loadingStatus={true}
+              />
             )}
             {debateEnded && (
               <p className="py-4 text-center text-sm text-muted-foreground">
