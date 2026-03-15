@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MessageDiv } from "@/components/message-div"
+import { PopularTopics } from "@/components/popular-topics"
 import { fetchNextMessage, type Message } from "@/lib/debate"
 
 const ROUNDS = 3
@@ -64,11 +65,11 @@ export default function HeroHeader() {
     }
   }
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
-    const trimmed = topic.trim()
+  const startDebate = async (topicText: string) => {
+    const trimmed = topicText.trim()
     if (!trimmed) return
 
+    setTopic(trimmed)
     const params = new URLSearchParams(searchParams.toString())
     params.set("topic", trimmed)
     router.push(`${pathname}?${params.toString()}`)
@@ -78,6 +79,11 @@ export default function HeroHeader() {
     setDebateEnded(false)
     setCurrentSpeaker("for")
     await sendNext(trimmed, "for", [])
+  }
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    await startDebate(topic)
   }
 
   const hasTopic = topic.trim().length > 0
@@ -114,12 +120,13 @@ export default function HeroHeader() {
               </Button>
             </div>
           </form>
+          <PopularTopics onSelectTopic={startDebate} />
         </div>
       )}
 
       {submitted && hasTopic && (
         <div className="flex w-full flex-1 items-stretch justify-center">
-          <div className="flex h-full max-h-[60vh] w-full max-w-2xl flex-col items-stretch gap-2 overflow-y-auto text-left">
+          <div className="flex h-full max-h-[60vh] w-full max-w-3xl flex-col items-stretch gap-2 overflow-y-auto text-left">
             {conversation.map((item, index) => (
               <MessageDiv
                 key={`${item.speaker}-${index}`}
