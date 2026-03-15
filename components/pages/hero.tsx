@@ -29,10 +29,23 @@ export default function HeroHeader() {
   const [debateEnded, setDebateEnded] = useState(false)
   const [currentSpeaker, setCurrentSpeaker] = useState<"for" | "against">("for")
   const bottomRef = useRef<HTMLDivElement>(null)
+  const didSetTopicThisSession = useRef(false)
+  const debateSessionRef = useRef(0)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    const queryTopic = (searchParams.get("topic") ?? "").trim()
+    if (queryTopic && !didSetTopicThisSession.current) {
+      router.replace(pathname)
+    }
+  }, [pathname, router, searchParams])
 
   useEffect(() => {
     const queryTopic = (searchParams.get("topic") ?? "").trim()
     if (!queryTopic) {
+      debateSessionRef.current += 1
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
       setSubmitted(false)
       setTopic("")
       setConversation([])
@@ -47,10 +60,12 @@ export default function HeroHeader() {
   }, [conversation, loading])
 
   const sendNext = async (t: string, speaker: "for" | "against", history: Message[]) => {
+    const sessionId = debateSessionRef.current
     setCurrentSpeaker(speaker)
     setLoading(true)
     try {
-      const message = await fetchNextMessage(t, speaker, history)
+      const message = await fetchNextMessage(t, speaker, history, abortControllerRef.current?.signal ?? undefined)
+      if (debateSessionRef.current !== sessionId) return
       const updated: Message[] = [...history, { speaker, message }]
       setConversation(updated)
 
@@ -60,8 +75,13 @@ export default function HeroHeader() {
         const nextSpeaker = speaker === "for" ? "against" : "for"
         await sendNext(t, nextSpeaker, updated)
       }
+    } catch (err) {
+      if (debateSessionRef.current !== sessionId) return
+      throw err
     } finally {
-      setLoading(false)
+      if (debateSessionRef.current === sessionId) {
+        setLoading(false)
+      }
     }
   }
 
@@ -69,6 +89,9 @@ export default function HeroHeader() {
     const trimmed = topicText.trim()
     if (!trimmed) return
 
+    didSetTopicThisSession.current = true
+    debateSessionRef.current += 1
+    abortControllerRef.current = new AbortController()
     setTopic(trimmed)
     const params = new URLSearchParams(searchParams.toString())
     params.set("topic", trimmed)
