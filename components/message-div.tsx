@@ -2,6 +2,8 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import TypewriterText from "@/components/smoothui/typewriter-text";
+
 interface MessageDivProps {
   speaker: string;
   message: string;
@@ -43,9 +45,9 @@ export function MessageDiv({ speaker, message, loadingStatus = false }: MessageD
           {loadingStatus ? (
             <TypingIndicator />
           ) : (
-            <p className="break-words overflow-hidden px-6 py-5 text-left text-sm leading-relaxed text-card-foreground">
-              {message}
-            </p>
+            <TypewriterText loop={false} speed={10} className="break-words overflow-hidden px-6 py-5 text-left text-sm leading-relaxed text-card-foreground">
+                {message}
+            </TypewriterText>
           )}
         </Card>
       </div>
