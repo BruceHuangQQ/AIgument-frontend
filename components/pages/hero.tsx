@@ -1,13 +1,18 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MessageDiv } from "@/components/message-div"
 
-type DebateMessage = { speaker: string; message: string }
+const DEBATE_ROUNDS = 3
+/** How long to show the second message's loading state after the first is revealed */
+const SECOND_LOADING_DURATION_MS = 400
+
+type ApiMessage = { role: string; content: string }
+type DebateMessage = { speaker: string; message: string; loading?: boolean }
 
 export default function HeroHeader() {
   const router = useRouter()
@@ -21,6 +26,9 @@ export default function HeroHeader() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const apiMessagesRef = useRef<ApiMessage[]>([])
+  const loadingPlaceholderTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
   useEffect(() => {
     const queryTopic = (searchParams.get("topic") ?? "").trim()
     if (!queryTopic) {
@@ -30,6 +38,84 @@ export default function HeroHeader() {
       setError(null)
     }
   }, [searchParams])
+
+  useEffect(() => {
+    return () => {
+      loadingPlaceholderTimeoutsRef.current.forEach(clearTimeout)
+      loadingPlaceholderTimeoutsRef.current = []
+    }
+  }, [])
+
+  const runRound = async (trimmed: string, round: number) => {
+    const body = {
+      stance: trimmed,
+      core_argument: `The topic "${trimmed}" is worth debating seriously.`,
+      evidence_bullets: "- Use your general knowledge to support your position.",
+      messages: [...apiMessagesRef.current],
+    }
+
+    setMessages((prev) => [...prev, { speaker: "For", message: "", loading: true }])
+
+    let res: Response
+    try {
+      res = await fetch("http://localhost:8000/debate/both", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    } catch (err: any) {
+      setMessages((prev) => prev.slice(0, -1))
+      setError(err.message ?? "Something went wrong. Is the backend running?")
+      setLoading(false)
+      return
+    }
+
+    if (!res.ok) {
+      setMessages((prev) => prev.slice(0, -1))
+      setError(`Server error: ${res.status}`)
+      setLoading(false)
+      return
+    }
+
+    const data = await res.json()
+    apiMessagesRef.current.push(
+      { role: "assistant", content: data.for },
+      { role: "assistant", content: data.against }
+    )
+
+    setMessages((prev) => [
+      ...prev.slice(0, -1),
+      { speaker: "For", message: data.for },
+      { speaker: "Against", message: "", loading: true },
+    ])
+
+    const t = setTimeout(() => {
+      loadingPlaceholderTimeoutsRef.current = loadingPlaceholderTimeoutsRef.current.filter((id) => id !== t)
+      setMessages((prev) => {
+        let idx = -1
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if (prev[i].speaker === "Against" && prev[i].loading) {
+            idx = i
+            break
+          }
+        }
+        if (idx < 0) return prev
+        return prev.map((m, i) => (i === idx ? { ...m, message: data.against, loading: false } : m))
+      })
+    }, SECOND_LOADING_DURATION_MS)
+    loadingPlaceholderTimeoutsRef.current.push(t)
+
+    if (round < DEBATE_ROUNDS) {
+      const continuePrompt =
+        round === DEBATE_ROUNDS - 1
+          ? "Give your final rebuttals."
+          : "Continue the debate with your rebuttals."
+      apiMessagesRef.current.push({ role: "user", content: continuePrompt })
+      runRound(trimmed, round + 1)
+    } else {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -44,30 +130,10 @@ export default function HeroHeader() {
     setError(null)
     setMessages([])
 
-    try {
-      const res = await fetch("http://localhost:8000/debate/both", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stance: trimmed,
-          core_argument: `The topic "${trimmed}" is worth debating seriously.`,
-          evidence_bullets: "- Use your general knowledge to support your position.",
-          messages: [{ role: "user", content: `Make your opening argument about: ${trimmed}` }],
-        }),
-      })
-
-      if (!res.ok) throw new Error(`Server error: ${res.status}`)
-
-      const data = await res.json()
-      setMessages([
-        { speaker: "For", message: data.for },
-        { speaker: "Against", message: data.against },
-      ])
-    } catch (err: any) {
-      setError(err.message ?? "Something went wrong. Is the backend running?")
-    } finally {
-      setLoading(false)
-    }
+    apiMessagesRef.current = [
+      { role: "user", content: `Make your opening argument about: ${trimmed}` },
+    ]
+    runRound(trimmed, 1)
   }
 
   const hasTopic = topic.trim().length > 0
@@ -119,6 +185,7 @@ export default function HeroHeader() {
                 key={`${item.speaker}-${index}`}
                 speaker={item.speaker}
                 message={item.message}
+                loadingStatus={item.loading === true}
               />
             ))}
           </div>
